@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Rove it or Lose it!</title>
+		<link rel="stylesheet" href="styles.css">		
+	</head>
+	<body>
+		<div id="page">
+			<header id="header">
+				<div id="header-inner">	
+
+						<h1><a href="index.html">Homepage</a></h1>
+					</div>
+					
+					<div class="clr"></div>
+				</div>
+			</header>
+			<div class="feature">
+				<div class="feature-inner">
+				<h1>Rove it or Lose it!</h1>
+                
+				</div>
+			</div>
+		
+	
+			<div id="content">
+				<div id="content-inner">
+				
+					<main id="contentbar">
+						<div class="article">
+							<H2>GPS Arduino Tutorial</H2>
+                             <p>Using an Arduino Mega, and the TinyGPSPlus library, we will create a sketch to print the location from a gps module when we enter '5' into the serial monitor, later we will use the gps data to control the rover. First we need to know that we can use an Arduino and the gps module to show where we are relative to a specified target.</p>
+                            <p>Here is our first sketch to print out our location:</p>
+<pre><code>#include TinyGPSPlus.h
+
+    TinyGPSPlus gps;
+    
+    void setup() {
+        Serial.begin(115200);
+        Serial1.begin(9600);
+        Serial.print("Enter 5 for location.");
+    }
+    
+    void loop() {
+        if (Serial.available() > 0 && Serial.read() == '5') {
+            while (Serial1.available() > 0) {
+                if (gps.encode(Serial1.read()) && gps.location.isValid()) {
+                    Serial.print(gps.location.lat(), 6);
+                    Serial.print(", ");
+                    Serial.println(gps.location.lng(), 6);
+                    break;
+                }
+            }
+        }
+    }</code></pre>
+
+
+                            <h4>Next use this sketch to output distance and course relative to a target location </h4>
+                            <p> </p>
+                            <pre><code>#include TinyGPSPlus.h
+                                  TinyGPSPlus gps;
+                                
+                                // Set target coordinates (replace with your desired location)
+                                const double targetLat = 39.079; //  latitude
+                                const double targetLng = -108.5534; //  longitude
+                                
+                                void setup() {
+                                    Serial.begin(115200);
+                                    Serial1.begin(9600);
+                                }
+                                
+                                void loop() {
+                                    if (Serial.available() > 0 && Serial.read() == '5') {
+                                        while (Serial1.available() > 0) {
+                                            if (gps.encode(Serial1.read()) && gps.location.isValid()) {
+                                                double distance = gps.distanceBetween(gps.location.lat(), gps.location.lng(), targetLat, targetLng);
+                                                double course = gps.courseTo(gps.location.lat(), gps.location.lng(), targetLat, targetLng);
+                                                
+                                                Serial.print("Distance: ");
+                                                Serial.print(distance, 2);
+                                                Serial.print(" m, Course: ");
+                                                Serial.print(course, 2);
+                                                Serial.println("°");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }</code></pre>
+                            <p> </p>
+
+
+                                </p>
+                            <p></p>
+                            <p>
+                         <div>
+                            <h4>The wiring for the gps module is layed out below. Make sure to connect your antenna to the gps module</h4>
+                            <img src="gpsdiagram.png" alt="gps diagram" class="center"> 
+                            <span> </span>
+                         </div>
+                
+                            </p>
+												</main>
+					
+					<nav id="sidebar">
+						<div class="widget">
+							<h3>Left heading</h3>
+							<ul>
+                                <li><a href="WBS+Gantt.html">WBS + Gantt Chart</a></li>
+                                <li><a href="ProductReqEngrSpec.html">Product Requirements and Engineering Specifications</a></li>
+                                <li><a href="RF Arduino Tutorial.html">RF Arduino Tutorial</a></li>
+                                <li><a href="UltrasonicTutorial.html">Ultrasonic Distance Sensor Tutorial</a></li>
+                                <li><a href="GPSTutorial.html">GPS Tutorial</a></li>
+                                <li><a href="ConceptGen.html">Concept Generation</a></li>
+                                <li><a href="ConceptEval.html">Concept Evaluation</a></li>
+                                <li><a href="Mission1.html">Mission 1</a></li>
+                                <li><a href="Mission2.html">Mission 2</a></li>
+                                <li><a href="Mission3.html">Mission 3</a></li>
+                                <li><a href="Mission4.html">Mission 4</a></li>
+							</ul>
+						</div>
+					</nav>
+					
+					<div class="clr"></div>
+				</div>
+			</div>
+		
+			<div id="footerblurb">
+				<div id="footerblurb-inner">
+				<!--
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>	
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>	
+					
+					<div class="clr"></div>
+                -->
+				</div>
+			</div>
+			<footer id="footer">
+				<div id="footer-inner">
+                    <!--
+					<p>Thanks</a></p>
+					<div class="clr"></div>
+                    -->
+				</div>
+			</footer>
+		</div>
+	</body>

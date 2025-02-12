@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Rove it or Lose it!</title>
+		<link rel="stylesheet" href="styles.css">		
+	</head>
+	<body>
+		<div id="page">
+			<header id="header">
+				<div id="header-inner">	
+
+						<h1><a href="index.html">Homepage</a></h1>
+					</div>
+					
+					<div class="clr"></div>
+				</div>
+			</header>
+			<div class="feature">
+				<div class="feature-inner">
+				<h1>Rove it or Lose it!</h1>
+                
+				</div>
+			</div>
+		
+	
+			<div id="content">
+				<div id="content-inner">
+				
+					<main id="contentbar">
+						<div class="article">
+							<H2>Rover Project</H2>
+                                                           <H3>UltraSonic Tutorial</H3>
+                          <p>This tutorial introduces an ultrasonic sensor paired with an Arduino Uno, a simple yet effective device for measuring distances. The ultrasonic sensor works by emitting sound waves and calculating the time it takes for the echo to return, converting that into a precise distance reading. Visitors following this tutorial can expect to learn how to connect the sensor to an Arduino Uno, code, and read real-time distance data. 
+
+</p>
+     			  <p>In an autonomous rover mission, three ultrasonic sensors can be strategically implemented to create an effective obstacle detection and avoidance subsystem. By positioning the sensors at the front, left, and right of the rover, the system can continuously monitor its surroundings for obstacles. These sensors work together to detect objects within their range by sending out sound waves and measuring the time it takes for the echoes to return, providing real-time distance data.
+When integrated into the rover's control system, this setup enables the rover to make informed navigation decisions. For instance, if the front sensor detects an obstacle, the rover can compare distance readings from the left and right sensors to decide the best path to avoid the obstacle. This redundancy ensures that the rover can adapt to various environments, whether it's navigating tight spaces or maneuvering around larger obstructions, enhancing its autonomy and reliability during missions.
+</p>
+			<p>A list of required hardware
+				<p>1. Arduino Uno<p>
+					<p>2. Breadboard </p>
+						<p>3. HC-SR04 Ultrasonic Distance sensor </p>
+							<p>4. 4 Jumper wires </p>
+								<p>5. Power unit <p>
+
+			<img>
+			<img scr="Screenshot 2025-01-27 182254.png">
+<p>
+<img src="USwiringDiagram.jpeg" alt="Wiring Diagram" width="500"
+
+</p>
+
+			<p>Sample Arduino sketch code
+				<pre><code>			
+const int trig_pin = 9;
+const int echo_pin = 10;
+float timing = 0.0;
+float distance = 0.0;
+
+void setup()
+{
+  pinMode(echo_pin, INPUT);
+  pinMode(trig_pin, OUTPUT);
+  digitalWrite(trig_pin, LOW);
+      
+  Serial.begin(9600);
+}
+
+void loop()
+{
+  digitalWrite(trig_pin, LOW);
+  delay(2);
+  
+  digitalWrite(trig_pin, HIGH);
+  delay(10);
+  digitalWrite(trig_pin, LOW);
+  
+  timing = pulseIn(echo_pin, HIGH);
+  distance = (timing * 0.034) / 2;
+  
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.print("cm | ");
+  Serial.print(distance / 2.54);
+  Serial.println("in")
+ delay(100);
+}
+</code></pre>
+</p>
+			
+												</main>
+					
+					<nav id="sidebar">
+						<div class="widget">
+							<h3>Left heading</h3>
+							<ul>
+								<li><a href="WBS+Gantt.html">WBS + Gantt Chart</a></li>
+                                <li><a href="ProductReqEngrSpec.html">Product Requirements and Engineering Specifications</a></li>
+                                <li><a href="RF Arduino Tutorial.html">RF Arduino Tutorial</a></li>
+                                <li><a href="UltrasonicTutorial.html">Ultrasonic Distance Sensor Tutorial</a></li>
+                                <li><a href="GPSTutorial.html">GPS Tutorial</a></li>
+                                <li><a href="ConceptGen.html">Concept Generation</a></li>
+                                <li><a href="ConceptEval.html">Concept Evaluation</a></li>
+                                <li><a href="Mission1.html">Mission 1</a></li>
+                                <li><a href="Mission2.html">Mission 2</a></li>
+                                <li><a href="Mission3.html">Mission 3</a></li>
+                                <li><a href="Mission4.html">Mission 4</a></li>
+							</ul>
+						</div>
+					</nav>
+					
+					<div class="clr"></div>
+				</div>
+			</div>
+		
+			<div id="footerblurb">
+				<div id="footerblurb-inner">
+				<!--
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>	
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>	
+					
+					<div class="clr"></div>
+                -->
+				</div>
+			</div>
+			<footer id="footer">
+				<div id="footer-inner">
+                    <!--
+					<p>Thanks</a></p>
+					<div class="clr"></div>
+                    -->
+				</div>
+			</footer>
+		</div>
+	</body>
+<html>

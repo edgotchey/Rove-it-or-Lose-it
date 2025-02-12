@@ -1,0 +1,147 @@
+html, #page { padding: 0; margin: 0; }
+body { 
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    color: #333333; 
+    font: normal 16px/1.6em 'Roboto', sans-serif; 
+    background-color: #f5f5f5;
+} 
+
+h1, h2, h3, h4, h5, h6 { 
+    color: #222222; 
+    font-family: 'Roboto', sans-serif; 
+    font-weight: 600; 
+}
+
+#page { background: #ffffff; }
+
+#header { 
+    background: #d5dbdb; 
+    color: #ffffff; 
+}
+
+#header-inner { 
+    margin: 0 auto; 
+    padding: 20px 0; 
+    width: 800px; 
+}
+
+.feature { 
+    background: #005f87; 
+    padding: 30px 20px; 
+}
+
+.feature-inner { 
+    margin: auto; 
+    width: 970px; 
+}
+
+.feature-inner h1 { 
+    color: #ffffff; 
+    font-size: 32px; 
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+#top-nav { 
+    margin: 0 auto; 
+    padding: 0px 0 0; 
+    height: 70px; 
+    float: right; 
+    background-color: #dbe2e8; /* Softer background color */
+}
+
+#top-nav ul { 
+    list-style: none; 
+    padding: 0; 
+    height: 70px; 
+    float: left; 
+}
+
+#top-nav ul li { 
+    margin: 0; 
+    padding: 0 0 0 8px; 
+    float: left; 
+}
+
+#top-nav ul li a { 
+    display: block; 
+    margin: 0; 
+    padding: 12px 20px; 
+    color: #333333; /* Darker text color */
+    text-decoration: none; 
+    font-weight: 500; 
+}
+
+#top-nav ul li.active a, #top-nav ul li a:hover { 
+    color: #f2b600; /* Bright yellow for hover and active states */
+}
+
+#content-inner { 
+    margin: 0 auto; 
+    padding: 20px 0; 
+    width: 970px; 
+    background: #ffffff; 
+}
+
+#content #contentbar { 
+    margin: 0; 
+    padding: 0; 
+    float: right; 
+    width: 760px; 
+}
+
+#content #contentbar .article { 
+    margin: 0 0 24px; 
+    padding: 0 20px 0 15px; 
+}
+
+img { 
+    float: right; 
+    border: none; 
+}
+
+#content #sidebar { 
+    padding: 0; 
+    float: left; 
+    width: 200px; 
+}
+
+#content #sidebar .widget { 
+    margin: 0 0 12px; 
+    padding: 12px 16px; 
+    background-color: #f7f7f7; 
+    border-radius: 8px; 
+    line-height: 1.5em; 
+}
+
+#content #sidebar .widget h3 a { 
+    text-decoration: none; 
+    font-weight: 500; 
+    color: #0072b1; 
+}
+
+#content #sidebar .widget ul { 
+    margin: 0; 
+    padding: 0; 
+    list-style: none; 
+    color: #666666; 
+}
+
+#content #sidebar .widget ul li { 
+    margin: 0; 
+    padding: 4px 0; 
+}
+
+#content #sidebar .widget ul li a { 
+    color: #0072b1; 
+    text-decoration: none; 
+    padding: 4px 8px; 
+}
+
+#

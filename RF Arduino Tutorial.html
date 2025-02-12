@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Rove it or Lose it!</title>
+		<link rel="stylesheet" href="styles.css">		
+	</head>
+	<body>
+		<div id="page">
+			<header id="header">
+				<div id="header-inner">	
+
+						<h1><a href="index.html">Homepage</a></h1>
+					</div>
+					
+					<div class="clr"></div>
+				</div>
+			</header>
+			<div class="feature">
+				<div class="feature-inner">
+				<h1>Rove it or Lose it!</h1>
+                
+				</div>
+			</div>
+		
+	
+			<div id="content">
+				<div id="content-inner">
+				
+					<main id="contentbar">
+						<div class="article">
+							<H2>RF Transmitter and Receiver Arduino Tutorial</H2>
+                             <p>Using two Arduinos, create sketches to transmit a 12-character string containing one
+                                number with a leading ‘X’ and padded with ‘Z’. The receiver should display the numbers
+                                and indicate whether the number is even or odd.</p>
+                            <p>Wiring schematic for the RF Transmitter:</p>
+
+
+                            <div>
+                             <img src="Arduino Transmiter Wiring Diagram.jpg" alt="Arduino Transmiter Wiring Diagram" 
+                             style="vertical-align: middle; width: 700px; height: auto;"> 
+                             <span> The Arduino code for the RF Transmitter </span>
+                             <div>
+
+                            <p> </p>
+                            <p> </p>
+                            <p> </p>
+                            <p> </p>
+
+
+                            
+                <pre><code>
+                #include RH_ASK.h
+                #include SPI.h // Not actually used but needed to compile
+                
+                RH_ASK driver;
+                                
+                void setup()
+                {
+                    Serial.begin(9600);	  // Debugging only
+                    if (!driver.init())
+                    Serial.println("init failed");
+                }
+                                
+                void loop()
+                {
+                    const char *msg = "X13ZZZZZZZZZ";
+                    driver.send((uint8_t *)msg, strlen(msg));
+                    driver.waitPacketSent();
+                    delay(1000);
+                }
+                            </code></pre>
+                                </p>
+                            <p>Wiring schematic for the RF Receiver:</p>
+                            <p>
+                         <div>
+                            <img src="Arduino Reciver Wiring Diagram.jpg" alt="Arduino Transmiter Wiring Diagram" 
+                             style="vertical-align: middle; width: 700px; height: auto;"> 
+                            <span> The Arduino code for the RF Receiver </span>
+                        <div>
+                <pre><code>
+                #include RH_ASK.h
+                #include SPI.h // Not actualy used but needed to compile
+                                
+                RH_ASK driver;
+                                
+                void setup()
+                {
+                    Serial.begin(9600);	// Debugging only
+                    if (!driver.init())
+                    Serial.println("init failed");
+                }
+                                
+                void loop()
+                {
+                    uint8_t buf[12];
+                    uint8_t buflen = sizeof(buf);
+                    if (driver.recv(buf, &buflen)) // Non-blocking
+                    buf[buflen] = '\0';
+                    String recievedMessage = String((char*)buf);
+                    {
+                        int i;
+                        // Message with a good checksum received, dump it.
+                        Serial.print("Message: ");
+                        Serial.println((char*)buf);         
+                        }
+                    if (recievedMessage.startsWith ("x") )
+                    {
+                        String numberStr = recievedMessage.substring(1, recievedMessage.indexOf ('z')) ;
+                        int number = numberStr.toInt () ;
+                        
+                        Serial. print (number) ;
+                        if (number * 2 == 0)
+                        {
+                        Serial. println(" is EVEN") ;
+                        }
+                        else 
+                        {
+                        Serial. println(" is ODD");
+                        }
+                    }
+                                
+                }
+                            </code></pre>
+                            </p>
+												</main>
+					
+					<nav id="sidebar">
+						<div class="widget">
+							<h3>Left heading</h3>
+							<ul>
+                                <li><a href="WBS+Gantt.html">WBS + Gantt Chart</a></li>
+                                <li><a href="ProductReqEngrSpec.html">Product Requirements and Engineering Specifications</a></li>
+                                <li><a href="RF Arduino Tutorial.html">RF Arduino Tutorial</a></li>
+                                <li><a href="UltrasonicTutorial.html">Ultrasonic Distance Sensor Tutorial</a></li>
+                                <li><a href="GPSTutorial.html">GPS Tutorial</a></li>
+                                <li><a href="ConceptGen.html">Concept Generation</a></li>
+                                <li><a href="ConceptEval.html">Concept Evaluation</a></li>
+                                <li><a href="Mission1.html">Mission 1</a></li>
+                                <li><a href="Mission2.html">Mission 2</a></li>
+                                <li><a href="Mission3.html">Mission 3</a></li>
+                                <li><a href="Mission4.html">Mission 4</a></li>
+							</ul>
+						</div>
+					</nav>
+					
+					<div class="clr"></div>
+				</div>
+			</div>
+		
+			<div id="footerblurb">
+				<div id="footerblurb-inner">
+				<!--
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>	
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>
+					<div class="column">
+						<h2><span></span></h2>
+						<p><script></script></p>
+					</div>	
+					
+					<div class="clr"></div>
+                -->
+				</div>
+			</div>
+			<footer id="footer">
+				<div id="footer-inner">
+                    <!--
+					<p>Thanks</a></p>
+					<div class="clr"></div>
+                    -->
+				</div>
+			</footer>
+		</div>
+	</body>
