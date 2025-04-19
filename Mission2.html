@@ -28,9 +28,232 @@
 				
 					<main id="contentbar">
 						<div class="article">
-							<H2>Mission 2</H2>
-                          <p>-This mission is about obstacle avoidance, first we will drive in an enclosed space around 6x6 feet. The rover cannot contact any walls or obstacles for 60 seconds.</p>  
-                          <p>-The next part of the mission involves driving forward to a waypoint 30 feet directly infront of the rover. There will be a single obstacle in the way which the rover must navigate around and stop within 5ft of the marked waypoint in under 120 seconds.</p>
+							<H2>Mission 2 Passed/Failed</H2>
+                             <p>Part A. This mission is about obstacle avoidance, first we will drive in an enclosed space around 6x6 feet. The rover cannot contact any walls or obstacles for 60 seconds.</p>  
+						     <p>This part of the mission was completed with a version of Rover V2, without the outer box shaped body but more of a prototype chassis.</p>
+							 <pre><code>#include <RH_ASK.h>
+								#include <SPI.h>
+								#include <Servo.h>
+								
+								const int IN1 = A1;
+								const int IN2 = A0;
+								const int enA = 11;
+								
+								const int SERVO1_PIN = 3;
+								const int SERVO2_PIN = 6;
+								
+								const int trig_pin_left = 44;
+								const int echo_pin_left = 42;
+								
+								const int trig_pin_right = 40;
+								const int echo_pin_right = 38;
+								
+								const int speed = 190;
+								
+								static uint8_t buf[12];
+								static uint8_t buflen = sizeof(buf);
+								
+								#define DEBUG 1 // Set to 0 to disable debug prints
+								
+								RH_ASK driver;
+								Servo myservo;
+								
+								enum MotorState { FORWARD, BACKWARD, IDLE };
+								MotorState motorState = FORWARD;
+								
+								void setup() {
+									Serial.begin(9600);
+									pinMode(IN1, OUTPUT);
+									pinMode(IN2, OUTPUT);
+									pinMode(enA, OUTPUT);
+									pinMode(echo_pin_left, INPUT);
+									pinMode(trig_pin_left, OUTPUT);
+									digitalWrite(trig_pin_left, LOW);
+									pinMode(echo_pin_right, INPUT);
+									pinMode(trig_pin_right, OUTPUT);
+									digitalWrite(trig_pin_right, LOW);
+									stopMotors();
+								
+									myservo.attach(SERVO1_PIN);
+								
+									if (!driver.init()) {
+										Serial.println("driver init failed");
+									}
+								
+									servoCenter();
+								}
+								
+								void loop() {
+									obstacleAvoidanceLeft();
+									obstacleAvoidanceRight();
+									if (motorState == FORWARD) {
+										driveForward();
+									} else if (motorState == BACKWARD) {
+										driveBackward();
+									} else {
+										stopMotors();
+									}
+								}
+								
+								void obstacleAvoidanceLeft() {
+									float distanceLeft = getDistanceLeft();
+								
+									if (distanceLeft < 25) {
+										avoidObstacleLeft(distanceLeft);
+									}
+								}
+								
+								void obstacleAvoidanceRight() {
+									float distanceRight = getDistanceRight();
+								
+									if (distanceRight < 25) {
+										avoidObstacleRight(distanceRight);
+									}
+								}
+								
+								void avoidObstacleLeft(float distanceLeft) {
+									Serial.println("Obstacle detected on the left!");
+								
+									// Stop the rover
+									motorState = IDLE;
+									delay(500); 
+								
+									// Back up
+									Serial.println("Backing up...");
+									digitalWrite(IN1, LOW);
+									digitalWrite(IN2, HIGH);
+									analogWrite(enA, speed);
+									delay(3000); 
+									
+									// Turn right to avoid obstacle
+									Serial.println("Turning right to avoid obstacle...");
+									myservo.write(70);
+									digitalWrite(IN1, HIGH);
+									digitalWrite(IN2, LOW);
+									analogWrite(enA, speed);
+								   
+									delay(3000); 
+									myservo.write(119);
+								
+									// Move forward again after avoiding
+									motorState = FORWARD;
+								
+									
+								
+								}
+								
+								void avoidObstacleRight(float distanceRight) {
+									Serial.println("Obstacle detected on the right!");
+								
+									// Stop the rover
+									motorState = IDLE;
+									delay(500); 
+								
+									// Back up
+									Serial.println("Backing up...");
+									digitalWrite(IN1, LOW);
+									digitalWrite(IN2, HIGH);
+									analogWrite(enA, speed);
+									delay(3000); 
+								
+									// Turn left to avoid obstacle
+									Serial.println("Turning right to avoid obstacle...");
+									myservo.write(70);
+									digitalWrite(IN1, HIGH);
+									digitalWrite(IN2, LOW);
+									analogWrite(enA, speed);
+								   
+									delay(3000); 
+									myservo.write(119);
+								
+									// Move forward again after avoiding
+									motorState = FORWARD;
+								
+								}
+								
+								float getDistanceLeft() {
+									digitalWrite(trig_pin_left, LOW);
+									delayMicroseconds(2);
+								
+									digitalWrite(trig_pin_left, HIGH);
+									delayMicroseconds(10);
+									digitalWrite(trig_pin_left, LOW);
+								
+									float timing = pulseIn(echo_pin_left, HIGH);
+									float distance = (timing * 0.034) / 2;
+								
+									Serial.print("Sensor [Trig:");
+									Serial.print(trig_pin_left);
+									Serial.print(" Echo:");
+									Serial.print(echo_pin_left);
+									Serial.print("] Distance: ");
+									Serial.print(distance);
+									Serial.println(" cm");
+									return distance;
+								}
+								
+								float getDistanceRight() {
+									digitalWrite(trig_pin_right, LOW);
+									delayMicroseconds(2);
+								
+									digitalWrite(trig_pin_right, HIGH);
+									delayMicroseconds(10);
+									digitalWrite(trig_pin_right, LOW);
+								
+									float timing = pulseIn(echo_pin_right, HIGH);
+									float distance = (timing * 0.034) / 2;
+								
+									Serial.print("Sensor [Trig:");
+									Serial.print(trig_pin_right);
+									Serial.print(" Echo:");
+									Serial.print(echo_pin_right);
+									Serial.print("] Distance: ");
+									Serial.print(distance);
+									Serial.println(" cm");
+									return distance;
+								}
+								
+								void driveForward() {
+									digitalWrite(IN1, HIGH);
+									digitalWrite(IN2, LOW);
+									analogWrite(enA, speed);
+								}
+								
+								void driveBackward() {
+									digitalWrite(IN1, LOW);
+									digitalWrite(IN2, HIGH);
+									analogWrite(enA, speed);
+								}
+								
+								void stopMotors() {
+									digitalWrite(IN1, LOW);
+									digitalWrite(IN2, LOW);
+									analogWrite(enA, 0);
+								}
+								
+								void servoCenter() {
+									myservo.write(110);
+									delay(250);
+									myservo.write(130);
+									delay(250);
+									myservo.write(110);
+									delay(250);
+									myservo.write(130);
+									delay(250);
+									myservo.write(110);
+									delay(250);
+									myservo.write(130);
+									delay(250);
+									myservo.write(110);
+									delay(250);
+									myservo.write(130);
+									delay(250);
+									myservo.write(119);
+								}
+								
+								</code></pre>
+								<p>Here is the arduino code used for part A.</p>
+                             <p>Part B. This involves driving forward to a waypoint 30 feet directly infront of the rover. There will be a single obstacle in the way which the rover must navigate around and stop within 5ft of the marked waypoint in under 120 seconds.</p>
 						  
 												</main>
 					

@@ -28,12 +28,265 @@
 				
 					<main id="contentbar">
 						<div class="article">
-							<H2>Mission 1</H2>
-                          <p>-Drive in a 10 foot square pattern, stopping at the original location and placing a marker. The marker should land within 3 feet of the rover's original location.</p>
+							<H2>Mission 1 - Passed</H2>
+                          <p>Part A. Drive in a 10 foot square pattern, stopping at the original location and placing a marker. The marker should land within 3 feet of the rover's original location.</p>
                           <p>The mission needs to be completed in under 60 seconds.</p>  
-                          <p>-Seperately we need to drive straight for 15-30 feet, specified on mission day and place a marker. To complete this mission the rover needs to use the RF transmitter beacon to read the specific intended distance. The marker needs to be within +/- 10% of the specified drive distance and should be completed in less than 30 seconds.</p>
-						  <p><img src="protomk1.jpg" alt="Prototype MK 1" class="center">  </p>
-							<p> We possibly could use a modified version of the prototype MK1 for our first mission</p>
+						  <p>Part A was completed by Rover V1 by hardcoding the 10 foot square pattern. Here is the arduino code used.</p>
+						  <pre><code>int enA = 5;
+							int in1 = A1;
+							int in2 = A0;
+							#include <Servo.h>
+							
+							Servo myservo;
+							Servo myservo2;
+							
+							void setup() {
+							  // Set all the motor control pins to outputs
+							  pinMode(enA, OUTPUT);
+							
+							  pinMode(in1, OUTPUT);
+							  pinMode(in2, OUTPUT);
+							
+							  // Turn off motors - Initial state
+							  digitalWrite(in1, LOW);
+							  digitalWrite(in2, LOW);
+							  myservo.attach(3);
+							  myservo2.attach(6);
+							}
+							
+							void loop() {
+							
+							
+							  // Center Servo
+							  myservo2.write(90);delay(1000);
+							  myservo.write(90);delay(250);
+							  myservo.write(92);delay(250);
+							  myservo.write(88);delay(250);
+							  myservo.write(90);delay(250);
+							
+							  //Side 1
+							
+							  myservo.write(90);
+							
+							  digitalWrite(in1, HIGH);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 250);
+							  delay(2200);
+							
+							  myservo.write(60);
+							
+							  digitalWrite(in1, HIGH);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 100);
+							  delay(1800);
+							
+							  //Side 2
+							  myservo.write(90);
+							
+							  digitalWrite(in1, HIGH);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 250);
+							  delay(1450);
+							
+							  myservo.write(60);
+							
+							  digitalWrite(in1, HIGH);
+							
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 100);
+							  delay(1800);
+							
+							  //Side 3
+							  myservo.write(90);
+							
+							  digitalWrite(in1, HIGH);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 250);
+							  delay(1400);
+							
+							  myservo.write(60);
+							
+							  digitalWrite(in1, HIGH);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 100);
+							  delay(1880);
+							
+							  //Side 4
+							  myservo.write(90);
+							
+							  digitalWrite(in1, HIGH);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 250);
+							  delay(2150);
+							
+							  //Stop
+							
+							  digitalWrite(in1, LOW);
+							  digitalWrite(in2, LOW);
+							  analogWrite(enA, 0);
+							  myservo.write(90);
+							  delay(500);
+							  myservo2.write(0);
+							  delay(30000);  //30s Delay to be able to grab rover
+							}
+							</code></pre>
+							
+
+                          <p>Part B. Seperately we need to drive straight for 15-30 feet, specified on mission day and place a marker. To complete this mission the rover needs to use the RF transmitter beacon to read the specific intended distance. The marker needs to be within +/- 10% of the specified drive distance and should be completed in less than 30 seconds.</p>
+						  <p>Here is the arduino code we used on a early version of Rover V2
+						  </p>
+						  <pre><code>#include <RH_ASK.h>
+							#include <SPI.h>
+							#include <Servo.h>
+							
+							const int IN1 = A1;
+							const int IN2 = A0;
+							
+							const int SERVO1_PIN = 3;
+							const int SERVO2_PIN = 6;
+							
+							const int MIN_DISTANCE = 15;
+							const int MAX_DISTANCE = 30;
+							const unsigned long MS_PER_FOOT = 638;
+							static uint8_t buf[12];
+							static uint8_t buflen = sizeof(buf);
+							
+							#define DEBUG 1 // Set to 0 to disable debug prints
+							
+							RH_ASK driver;
+							Servo myservo;
+							Servo myservo2;
+							
+							enum MotorState { IDLE, RUNNING_FORWARD };
+							MotorState motorState = IDLE;
+							
+							int travelDistance = 0;
+							unsigned long motorRunDuration = 0;
+							unsigned long previousMillis = 0;
+							
+							void setup() {
+								Serial.begin(9600);
+								pinMode(IN1, OUTPUT);
+								pinMode(IN2, OUTPUT);
+								stopMotors();
+							
+								myservo.attach(SERVO1_PIN);
+								myservo2.attach(SERVO2_PIN);
+							
+								if (!driver.init()) {
+									Serial.println("RF driver init failed");
+								}
+							
+								servoCenter();
+								myservo2.write(85);
+							}
+							
+							void loop() {
+							  myservo.write(119);
+								if (receiveRF()) {
+									parseRF();
+								}
+								motorControl();
+							}
+							
+							bool receiveRF() {
+								buflen = sizeof(buf);
+								if (driver.recv(buf, &buflen)) {
+									buf[buflen] = '\0';
+									#if DEBUG
+										Serial.print("Message received: ");
+										Serial.println((char*)buf);
+									#endif
+									return true;
+								}
+								return false;
+							}
+							
+							void parseRF() {
+								char* message = (char*)buf;
+							
+								if (message[0] == 'X') {
+									char* endPtr = strchr(message, 'Z');
+									if (endPtr) {
+										*endPtr = '\0';
+										int tempDistance = atoi(message + 1);
+										if (tempDistance >= MIN_DISTANCE && tempDistance <= MAX_DISTANCE) {
+											travelDistance = tempDistance;
+											#if DEBUG
+												Serial.print("Parsed travel distance: ");
+												Serial.println(travelDistance);
+											#endif
+										} else {
+											#if DEBUG
+												Serial.println("Error: Distance out of range");
+											#endif
+										}
+									}
+								}
+							}
+							
+							void motorControl() {
+								unsigned long currentMillis = millis();
+							
+								switch (motorState) {
+									case IDLE:
+										if (travelDistance > 0) {
+											motorRunDuration = travelDistance * MS_PER_FOOT;
+											driveForward();
+											previousMillis = currentMillis;
+											motorState = RUNNING_FORWARD;
+											#if DEBUG
+												Serial.print("Running motors for ");
+												Serial.print(motorRunDuration);
+												Serial.println(" ms");
+											#endif
+										}
+										break;
+							
+									case RUNNING_FORWARD:
+										if (currentMillis - previousMillis >= motorRunDuration) {
+											stopMotors();
+											travelDistance = 0;
+											motorState = IDLE;
+											triggerServo();
+											#if DEBUG
+												Serial.println("Movement complete");
+											#endif
+										}
+										break;
+								}
+							}
+							
+							void driveForward() {
+								digitalWrite(IN1, HIGH);
+								digitalWrite(IN2, LOW);
+							
+							}
+							
+							void stopMotors() {
+								digitalWrite(IN1, LOW);
+								digitalWrite(IN2, LOW);
+							 
+							}
+							
+							void servoCenter() {
+							   myservo.write(110);delay(250);
+							  myservo.write(130);delay(250);
+							myservo.write(110);delay(250);
+							  myservo.write(130);delay(250);
+							myservo.write(110);delay(250);
+							  myservo.write(130);delay(250);
+							 myservo.write(110);delay(250);
+							  myservo.write(130);delay(250);
+							  myservo.write(119);
+							  
+							}
+							
+							void triggerServo() {
+							  
+								myservo2.write(0);
+							}</code></pre>
+							<p>This part of the mission was completed with a version of Rover V2, without the outer box shaped body but more of a prototype chassis.</p>
 												</main>
 					
 					<nav id="sidebar">
