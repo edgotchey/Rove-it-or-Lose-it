@@ -28,7 +28,7 @@
 				
 					<main id="contentbar">
 						<div class="article">
-							<H2>Mission 2 Passed/Failed</H2>
+							<H2>Mission 2 [Passed]</H2>
                              <p>Part A. This mission is about obstacle avoidance, first we will drive in an enclosed space around 6x6 feet. The rover cannot contact any walls or obstacles for 60 seconds.</p>  
 						     <p>This part of the mission was completed with a version of Rover V2, without the outer box shaped body but more of a prototype chassis.</p>
 							 <pre><code>#include <RH_ASK.h>
@@ -258,6 +258,202 @@
 								  </video>
 								  <p>Video of part A.</p>
                              <p>Part B. This involves driving forward to a waypoint 30 feet directly infront of the rover. There will be a single obstacle in the way which the rover must navigate around and stop within 5ft of the marked waypoint in under 120 seconds.</p>
+							 <p> Here is the code for part B.</p>
+							 <pre><code>
+								#include <SPI.h>
+								#include <Servo.h>
+								
+								const int enA = 11;
+								const int IN1 = A1;
+								const int IN2 = A0;
+								
+								const int SERVO1_PIN = 3;
+								const int SERVO2_PIN = 45;
+								
+								const int trig_pin_left = 44;
+								const int echo_pin_left = 42;
+								const int trig_pin_right = 40;
+								const int echo_pin_right = 38;
+								
+								const int motorSpeed = 255;
+								const int targetDistance = 34; // in feet
+								const unsigned long MS_PER_FOOT = 1500; // milliseconds per foot traveled
+								
+								#define DEBUG 1 // Set to 0 to disable debug prints
+								
+								Servo myservo;
+								Servo myservo2;
+								
+								unsigned long travelStartTime = 0;
+								bool reachedTarget = false;
+								
+								void setup() {
+									Serial.begin(9600);
+								
+									// Motor pins
+									pinMode(IN1, OUTPUT);
+									pinMode(IN2, OUTPUT);
+									pinMode(enA, OUTPUT);
+									stopMotors();
+								
+									// Ultrasonic sensors
+									pinMode(trig_pin_left, OUTPUT);
+									pinMode(echo_pin_left, INPUT);
+									pinMode(trig_pin_right, OUTPUT);
+									pinMode(echo_pin_right, INPUT);
+									digitalWrite(trig_pin_left, LOW);
+									digitalWrite(trig_pin_right, LOW);
+								
+									// Servos
+									myservo.attach(SERVO1_PIN);
+									myservo2.attach(SERVO2_PIN);
+									servoCenter();
+									myservo2.write(85);
+									delay(3000);
+									myservo.write(117); // Set to straight
+								
+									
+								}
+								
+								void loop() {
+									if (reachedTarget == false) {
+										driveToTarget();
+									}
+								}
+								
+								
+								void driveToTarget() {
+									static unsigned long motorRunDuration = targetDistance * MS_PER_FOOT;
+								
+									if (travelStartTime == 0) {
+										travelStartTime = millis(); // Start timer once
+									}
+								
+									unsigned long elapsed = millis() - travelStartTime;
+								
+									if (elapsed >= motorRunDuration) {
+										stopMotors();
+										triggerServo();
+										Serial.println("Target reached!");
+										reachedTarget = true;
+										return;
+									}
+								
+									float distanceLeft = getDistanceLeft();
+									float distanceRight = getDistanceRight();
+								
+									if ((distanceLeft > 20) && (distanceRight > 20)) {
+										driveForward();
+									} else {
+										if (distanceLeft < 20) {
+											avoidObstacleLeft();
+										} else {
+											avoidObstacleRight();
+										}
+									}
+								}
+								
+								void avoidObstacleLeft() {
+									Serial.println("Obstacle detected on the left!");
+									stopMotors();
+									driveBackwards();
+									delay(3000);
+									turnRight();
+								}
+								
+								void avoidObstacleRight() {
+									Serial.println("Obstacle detected on the right!");
+									stopMotors();
+									driveBackwards();
+									delay(3000);
+									turnLeft();
+								}
+								
+								void turnRight() {
+									Serial.println("Turning right...");
+									myservo.write(160); // Turn wheels right
+									driveForward();
+									delay(3000);
+									myservo.write(80); // Over-correct left to realign
+									delay(6500);
+									myservo.write(117); // Straight
+								}
+								
+								void turnLeft() {
+									Serial.println("Turning left...");
+									myservo.write(80); // Turn wheels left
+									driveForward();
+									delay(3000);
+									myservo.write(160); // Over-correct right
+									delay(6500);
+									
+									myservo.write(117); // Straight
+								}
+								
+								float getDistanceLeft() {
+									digitalWrite(trig_pin_left, LOW);
+									delayMicroseconds(2);
+									digitalWrite(trig_pin_left, HIGH);
+									delayMicroseconds(10);
+									digitalWrite(trig_pin_left, LOW);
+									float timing = pulseIn(echo_pin_left, HIGH);
+									float distance = (timing * 0.034) / 2;
+									Serial.print("[Left Sensor] Distance: ");
+									Serial.print(distance);
+									Serial.println(" cm");
+									return distance;
+								}
+								
+								float getDistanceRight() {
+									digitalWrite(trig_pin_right, LOW);
+									delayMicroseconds(2);
+									digitalWrite(trig_pin_right, HIGH);
+									delayMicroseconds(10);
+									digitalWrite(trig_pin_right, LOW);
+									float timing = pulseIn(echo_pin_right, HIGH);
+									float distance = (timing * 0.034) / 2;
+									Serial.print("[Right Sensor] Distance: ");
+									Serial.print(distance);
+									Serial.println(" cm");
+									return distance;
+								}
+								
+								void driveForward() {
+									digitalWrite(IN1, HIGH);
+									digitalWrite(IN2, LOW);
+									analogWrite(enA, motorSpeed);
+								}
+								
+								void driveBackwards() {
+									digitalWrite(IN1, LOW);
+									digitalWrite(IN2, HIGH);
+									analogWrite(enA, motorSpeed);
+								}
+								
+								void stopMotors() {
+									digitalWrite(IN1, LOW);
+									digitalWrite(IN2, LOW);
+									analogWrite(enA, 0);
+								}
+								
+								void servoCenter() {
+									myservo.write(110);
+									myservo.write(130);
+									myservo.write(110);
+									myservo.write(130);
+									myservo.write(110);
+									myservo.write(130);
+									myservo.write(110);
+									myservo.write(130);
+									myservo.write(119);
+								}
+								
+								void triggerServo() {
+									myservo2.write(180);
+									delay(250);
+									myservo2.write(85);
+								}
+								</code></pre>
 							 <video controls="controls" width="800" height="600" name="Video Name">
 								<source src="Mission_2B_Fail.mp4">
 							  </video>

@@ -28,9 +28,227 @@
 				
 					<main id="contentbar">
 						<div class="article">
-							<H2>Mission 4</H2>
+							<H2>Mission 4 [Passed]</H2>
                           <p>-For the last mission, the rover will need to navigate to a specified GPS location. The rover needs to stop within 15 feet of the marked waypoint.</p>  
                           <p>-The rover will need to read the GPS coordinates from the RF transmitter, place a marker at the destination through rough terrain and return to the original starting location with the cumulative error being under 25 feet. </p>
+						  <p>Here is the code used in mission 4.</p>
+						  <pre><code>#include <TinyGPS++.h>
+							#include <SPI.h>
+							#include <Servo.h>
+							
+							
+							#define RXPin        19
+							#define TXPin        18
+							#define GPSBaud      9600
+							#define ConsoleBaud 115200
+							
+							const int enA         = 11;
+							const int IN1         = A1;
+							const int IN2         = A0;
+							const int SERVO1_PIN  = 3;    // Steering servo
+							const int SERVO2_PIN  = 45;   // Payload servo
+							
+							
+							double TARGET_LAT = 39.08103;
+							double TARGET_LNG = -108.55907;
+							double initial_LAT = 0.0;
+							double initial_LNG = 0.0;
+							
+							const double DIST_TOLERANCE     =  4.0;    // meters to stop and drop
+							const double HEADING_TOL        = 10.0;    // degrees tolerance
+							const double MIN_MOVE_THRESHOLD =  1.0;    // meters min movement
+							
+							const unsigned long DRIVE_DURATION = 3500;     // ms to drive between fixes
+							const unsigned long MS_PER_DEGREE  =    8;     // ms of drive per degree turn
+							
+							
+							
+							Servo       steerServo;
+							Servo       payloadServo;
+							TinyGPSPlus gps;
+							
+							
+							bool    initialFixRecorded = false;
+							bool    drivingForward     = false;
+							bool    waitingForGPS      = false;
+							bool    payloadDropped     = false;
+							bool    targetReceived     = false;
+							bool returningHome  = false;
+							
+							double  lat1, lng1;
+							double  lat2, lng2;
+							
+							unsigned long driveStartTime = 0;
+							
+							void setup() {
+							  Serial.begin(ConsoleBaud);
+							  Serial1.begin(GPSBaud);
+							
+							
+							  pinMode(IN1, OUTPUT);
+							  pinMode(IN2, OUTPUT);
+							  pinMode(enA, OUTPUT);
+							  stopMotors();
+							
+							
+							  steerServo.attach(SERVO1_PIN);
+							  payloadServo.attach(SERVO2_PIN);
+							  centerSteering();
+							  payloadServo.write(85);   // stow payload
+							  steerServo.write(119);    // center wheels
+							
+							
+							  delay(5000);  
+							}
+							
+							void loop() {
+							  //Always feed GPS
+							  while (Serial1.available()) {
+								gps.encode(Serial1.read());
+							  }
+							
+							
+							
+							  //Wait for first good GPS fix
+							  if (!initialFixRecorded && gps.location.isValid()) {
+							
+								initial_LAT = gps.location.lat();
+								initial_LNG = gps.location.lng();
+							
+								initialFixRecorded = true;
+							
+								Serial.println("First GPS fix acquired.");
+							  }
+							
+							  //Drive leg
+							  if (initialFixRecorded
+							  && !drivingForward
+							  && !waitingForGPS
+							  && (!payloadDropped || returningHome)
+							) {
+								lat1 = gps.location.lat();
+								lng1 = gps.location.lng();
+								driveForward();
+								driveStartTime = millis();
+								drivingForward = true;
+								Serial.println("Driving forward...");
+							  }
+							
+							  //Wait for next fix
+							  if (drivingForward && millis() - driveStartTime >= DRIVE_DURATION) {
+								stopMotors();
+								drivingForward = false;
+								waitingForGPS = true;
+								Serial.println("Stopped. Waiting for new GPS fix...");
+							  }
+							
+							  
+							  if (waitingForGPS && gps.location.isUpdated() && gps.location.isValid()) {
+								lat2 = gps.location.lat();
+								lng2 = gps.location.lng();
+								waitingForGPS = false;
+							
+								//verify we actually moved
+								double moved = TinyGPSPlus::distanceBetween(lat1, lng1, lat2, lng2);
+								Serial.print("Movement since last fix: ");
+								Serial.print(moved, 1);
+								Serial.println(" m");
+								if (moved < MIN_MOVE_THRESHOLD) {
+								  Serial.println("Movement too small,retrying drive.");
+								  driveForward();
+								  driveStartTime = millis();
+								  drivingForward = true;
+								  return;
+								}
+							
+								//how far to target?
+								double d2t = TinyGPSPlus::distanceBetween(lat2, lng2, TARGET_LAT, TARGET_LNG);
+								Serial.print("Distance to target: ");
+								Serial.print(d2t, 1);
+								Serial.println(" m");
+								if (d2t <= DIST_TOLERANCE) {
+							  stopMotors();
+							
+							  if (!payloadDropped) {
+								// just reached the **outbound** target
+								Serial.println("Within drop tolerance,releasing payload!");
+								triggerPayload();
+							  }
+							  else if (returningHome) {
+								// just got back home
+								Serial.println("Returned to start! Mission complete.");
+								stopMotors();
+								while (true);   // now really done
+							  }
+							  return;
+							}
+							
+								//compute heading & steering correction
+								double currentHdg  = TinyGPSPlus::courseTo(lat1, lng1,   lat2, lng2);
+								double desiredBrg  = TinyGPSPlus::courseTo(lat2, lng2, TARGET_LAT, TARGET_LNG);
+								double corr = desiredBrg - currentHdg;
+								if      (corr >  180) corr -= 360;
+								else if (corr < -180) corr += 360;
+								Serial.print("Hdg: "); Serial.print(currentHdg,1);
+								Serial.print(" Brg: "); Serial.print(desiredBrg,1);
+								Serial.print(" Corr: "); Serial.print(corr,1);
+								
+							
+								//turn if needed
+								if (fabs(corr) > HEADING_TOL) {
+								  Serial.println("Adjusting heading...");
+								  driveForward();
+								  if (corr > 0) steerServo.write(160);  // right
+								  else          steerServo.write(80);   // left
+								  delay((unsigned long)(fabs(corr) * MS_PER_DEGREE));
+								  steerServo.write(119);
+								  stopMotors();
+								  Serial.println("Turn complete.");
+								} else {
+								  Serial.println("Heading OK. Next leg.");
+								}
+							
+								drivingForward = false;
+							  }
+							}
+							
+							
+							void driveForward() {
+							  digitalWrite(IN1, HIGH);
+							  digitalWrite(IN2, LOW);
+							  analogWrite(enA, 255);
+							}
+							
+							void stopMotors() {
+							  digitalWrite(IN1, LOW);
+							  digitalWrite(IN2, LOW);
+							  analogWrite(enA, 0);
+							}
+							
+							void triggerPayload() {
+							  payloadServo.write(180);
+							  delay(250);
+							  payloadServo.write(85);
+							  TARGET_LAT = initial_LAT;
+							  TARGET_LNG = initial_LNG;
+							  payloadDropped  = true;
+							  returningHome   = true;
+							  
+							}
+							
+							void centerSteering() {
+							  for (int i = 0; i < 4; i++) {
+								steerServo.write(110);
+								delay(100);
+								steerServo.write(130);
+								delay(100);
+							  }
+							  steerServo.write(119);
+							}</code></pre>
+							<p> Our RF reciever was malfunctioning, so we ommitted the RF capability.</p>
+							<video controls="controls" width="800" height="600" name="Video Name">
+								<source src="Mission_4.mp4">
+							  </video>
 						  
 												</main>
 					

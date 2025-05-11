@@ -28,10 +28,173 @@
 				
 					<main id="contentbar">
 						<div class="article">
-							<H2>Mission 3</H2>
+							<H2>Mission 3 [Passed]</H2>
                           <p>-For this mission, we will use our GPS module to point the rover due north from an arbitrary starting location. We need to be within 20 degrees of heading accuracy and complete the mission in under 180 seconds</p>  
                           <p>-This mission is challenging because the rover will be subjected to rough terrain.</p>
-						  
+						  <p> Here is the code we used for mission 3.</p>
+						  <pre><code>#include <TinyGPS++.h>
+							#include <RH_ASK.h>
+							#include <SPI.h>
+							#include <Servo.h>
+							
+							#define RXPin 19
+							#define TXPin 18
+							#define GPSBaud 9600
+							#define ConsoleBaud 115200
+							
+							const int enA = 11;
+							const int IN1 = A1;
+							const int IN2 = A0;
+							const int SERVO1_PIN = 3;   // Steering
+							const int SERVO2_PIN = 45;  // Payload
+							
+							RH_ASK driver;
+							Servo myservo;      // Steering Servo
+							Servo myservo2;     // Payload Servo
+							TinyGPSPlus gps;
+							
+							bool initialPositionRecorded = false;
+							bool drivingForward = false;
+							bool waitingForGPS = false;
+							bool payloadDropped = false;
+							
+							double lat1, lng1, lat2, lng2;
+							
+							unsigned long driveStartTime = 0;
+							unsigned long lastUpdateTime = 0;
+							
+							const unsigned long DRIVE_DURATION = 5000; 
+							const double HEADING_TOLERANCE = 15.0;      
+							const unsigned long MS_PER_DEGREE = 8;     
+							
+							void setup() {
+							  Serial.begin(ConsoleBaud);
+							  Serial1.begin(GPSBaud);
+							
+							  pinMode(IN1, OUTPUT);
+							  pinMode(IN2, OUTPUT);
+							  pinMode(enA, OUTPUT);
+							  
+							  stopMotors();
+							  servoCenter();
+							
+							  myservo.attach(SERVO1_PIN);
+							  myservo2.attach(SERVO2_PIN);
+							  
+							  myservo2.write(85);  // Payload initial
+							  myservo.write(119);  // Center steering
+							  delay(20000); // delay to attach body
+							}
+							
+							void loop() {
+							  // Always read GPS data
+							  while (Serial1.available() > 0) {
+								gps.encode(Serial1.read());
+							  }
+							
+							  // Record initial position once
+							  if (!initialPositionRecorded && gps.location.isValid()) {
+								lat1 = gps.location.lat();
+								lng1 = gps.location.lng();
+								initialPositionRecorded = true;
+								Serial.println("Initial GPS position acquired.");
+							  }
+							
+							  // Drive forward after initial position
+							  if (initialPositionRecorded && !drivingForward && !waitingForGPS) {
+								driveForward();
+								driveStartTime = millis();
+								drivingForward = true;
+								Serial.println("Driving forward...");
+							  }
+							
+							  // After driving for a time, stop and wait for GPS update
+							  if (drivingForward && (millis() - driveStartTime >= DRIVE_DURATION)) {
+								stopMotors();
+								drivingForward = false;
+								waitingForGPS = true;
+								Serial.println("Stopped. Waiting for GPS update...");
+							  }
+							
+							  // When stopped, wait for updated GPS location
+							  if (waitingForGPS && gps.location.isUpdated() && gps.location.isValid()) {
+								lat2 = gps.location.lat();
+								lng2 = gps.location.lng();
+								waitingForGPS = false;
+								Serial.println("New GPS fix acquired.");
+							
+								double heading = TinyGPSPlus::courseTo(lat1, lng1, lat2, lng2);
+								double correction = heading;
+							
+								if (correction > 180) correction -= 360;
+								if (correction < -180) correction += 360;
+							
+								Serial.print("Heading: ");
+								Serial.print(heading, 2);
+								Serial.print("Correction needed: ");
+								Serial.println(correction, 2);
+							
+								// If heading is good, drop payload
+								if (abs(correction) <= HEADING_TOLERANCE) {
+								  Serial.println("Heading within tolerance. Dropping payload.");
+								  triggerServo();
+								  payloadDropped = true;
+								  while (true); // Done
+								} 
+								else {
+								  // Adjust heading
+								  Serial.println("Correcting heading while driving...");
+								  driveForward(); // Start moving forward
+								  if (correction > 0) {
+									myservo.write(80); // Right turn
+								  } else {
+									myservo.write(160); // Left turn
+								  }
+							
+								  delay(abs(correction) * MS_PER_DEGREE);
+							
+								  myservo.write(119); // Center steering again
+								  Serial.println("Finished turn. Preparing next move...");
+							
+								  lat1 = lat2;  // Update initial reference point
+								  lng1 = lng2;
+								  stopMotors(); // Stop after correcting and drive again
+								}
+							  }
+							}
+							
+							
+							void driveForward() {
+							  digitalWrite(IN1, HIGH);
+							  digitalWrite(IN2, LOW);
+							  analogWrite(enA, 255);
+							}
+							
+							void stopMotors() {
+							  digitalWrite(IN1, LOW);
+							  digitalWrite(IN2, LOW);
+							  analogWrite(enA, 0);
+							}
+							
+							void triggerServo() {
+							  myservo2.write(180);
+							  delay(250);
+							  myservo2.write(85);
+							}
+							void servoCenter() {
+							  for (int i = 0; i < 4; i++) {
+								myservo.write(110);
+								delay(100);
+								myservo.write(130);
+								delay(100);
+							  }
+							  myservo.write(119);
+							}
+							</code></pre>
+							<video controls="controls" width="800" height="600" name="Video Name">
+								<source src="Mission_3.mp4">
+							  </video>
+							  <p>Rover completing Mission 3</p>
 												</main>
 					
 					<nav id="sidebar">
